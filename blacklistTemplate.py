@@ -1,0 +1,3 @@
+tagsBlacklist = [
+    'rerun', 'test'
+]
