@@ -9,11 +9,18 @@ from blacklist import *
 global id
 global pagination
 global tags
+import sys
 id = ""
 pagination = ""
 tags = []
 
-game = input("Please enter category:")
+
+testing = False
+
+if testing:
+    game = 'Minecraft'
+else:
+    game = input("Please enter category:")
 
 def convert_timedelta(duration):
     days, seconds = duration.days, duration.seconds
@@ -43,14 +50,15 @@ def getMoreStreams():
                 now = datetime.datetime.now()
                 hours, minutes, seconds = convert_timedelta(now - startedAt)
                 if not hours > 18:
-                    if not a['tag_ids'] is None:
-                        for t in range(len(a['tag_ids'])):
-                            tags.append(a['tag_ids'][t])
+                    if not a['tags'] is None:
+                        for t in range(len(a['tags'])):
+                            tags.append(a['tags'][t])
             getMoreStreams()
     except Exception as x:
         print(x)
     except requests.exceptions.ConnectTimeout:
         print("timeout", urlMore)
+
 
 url = "https://api.twitch.tv/helix/games?name=" + game
 params = {"Client-ID": "" + ClientID + "", "Authorization": "Bearer " + FollowerToken}
@@ -62,25 +70,41 @@ c = Counter(tags)
 
 keys = list(c.keys())
 values = list(c.values())
+
+for k in range(len(keys)):
+    for d in range(len(keys)):
+        if not keys[k] == keys[d]:
+            if keys[k].lower() == keys[d].lower():
+                values[k] = values[k] + values[d]
+                keys[d] = 'x'
+                values[d] = 0
+
 newKeys = []
 newValues = []
 
-
 for i in range(len(keys)):
-    urlMore = "https://api.twitch.tv/helix/tags/streams?tag_id=" + keys[i]
-    paramsMore = {"Client-ID": "" + ClientID + "", "Authorization": "Bearer " + FollowerToken}
-    r = requests.get(urlMore, headers=paramsMore).json()
-    if r['data'][0]['localization_names']['en-us'] == 'English':
-        newKeys.append(r['data'][0]['localization_names']['en-us'])
-        newValues.append(values[i])
-    if not r['data'][0]['is_auto']:
-        newKeys.append(r['data'][0]['localization_names']['en-us'])
-        newValues.append(values[i])
+    newKeys.append(keys[i])
+    newValues.append(values[i])
 
 dummy = []
 dummy[:], newKeys[:] = zip(*sorted(zip(newValues, newKeys), key=lambda p: (p[0], p[1])))
 newValues = sorted(newValues[:])
 
 for i in range(len(newKeys)):
-    if not newKeys[i] in tagsBlacklist:
-        print(newValues[i], newKeys[i])
+    if testing:
+        if not newKeys[i].lower() in (tag.lower() for tag in ridgureBlacklist):
+            if not newValues[i] == 0:
+                print(newValues[i], newKeys[i])
+    else:
+        if str(sys.argv[1]) == '-ridgureBlacklist':
+            if not newKeys[i].lower() in (tag.lower() for tag in ridgureBlacklist):
+                if not newValues[i] == 0:
+                    print(newValues[i], newKeys[i])
+        elif str(sys.argv[1]) == '-noBlacklist':
+            if not newValues[i] == 0:
+                print(newValues[i], newKeys[i])
+        elif str(sys.argv[1]) == '-ririTheDinoBlacklist':
+            if not newKeys[i] in ririBlacklist:
+                if not newValues[i] == 0:
+                    print(newValues[i], newKeys[i])
+
